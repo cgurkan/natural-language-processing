@@ -3,6 +3,7 @@ from sklearn.metrics.pairwise import pairwise_distances_argmin
 
 from chatterbot import ChatBot
 from chatterbot.trainers import ChatterBotCorpusTrainer
+from sklearn.metrics.pairwise import cosine_similarity
 from utils import *
 
 
@@ -22,10 +23,9 @@ class ThreadRanker(object):
         """
         thread_ids, thread_embeddings = self.__load_embeddings_by_tag(tag_name)
 
-        # HINT: you have already implemented a similar routine in the 3rd assignment.
-        
-        question_vec = #### YOUR CODE HERE ####
-        best_thread = #### YOUR CODE HERE ####
+        # HINT: you have already implemented a similar routine in the 3rd assignment.        
+        question_vec = question_to_vec(question=question, embeddings=self.word_embeddings, dim=self.embeddings_dim)
+        best_thread = np.argmax(cosine_similarity([question_vec],thread_embeddings)[0])  
         
         return thread_ids[best_thread]
 
@@ -52,39 +52,33 @@ class DialogueManager(object):
         # Create an instance of the ChatBot class.
         # Create a trainer (chatterbot.trainers.ChatterBotCorpusTrainer) for the ChatBot.
         # Train the ChatBot with "chatterbot.corpus.english" param.
-        
-        ########################
-        #### YOUR CODE HERE ####
-        ########################
+        from chatterbot import ChatBot
+        self.chitchat_bot = ChatBot('ChitChat_Bot',trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
+        # Train based on the english corpus
+        self.chitchat_bot.train("chatterbot.corpus.english")
 
-        # remove this when you're done
-        raise NotImplementedError(
-            "Open dialogue_manager.py and fill with your code. In case of Google Colab, download"
-            "(https://github.com/hse-aml/natural-language-processing/blob/master/project/dialogue_manager.py), "
-            "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
-       
     def generate_answer(self, question):
         """Combines stackoverflow and chitchat parts using intent recognition."""
 
         # Recognize intent of the question using `intent_recognizer`.
         # Don't forget to prepare question and calculate features for the question.
         
-        prepared_question = #### YOUR CODE HERE ####
-        features = #### YOUR CODE HERE ####
-        intent = #### YOUR CODE HERE ####
+        prepared_question = text_prepare(question)
+        features =  self.tfidf_vectorizer.transform([prepared_question])
+        intent = self.intent_recognizer.predict(features)
 
         # Chit-chat part:   
         if intent == 'dialogue':
             # Pass question to chitchat_bot to generate a response.       
-            response = #### YOUR CODE HERE ####
+            response = self.chitchat_bot.get_response(question)
             return response
         
         # Goal-oriented part:
         else:        
             # Pass features to tag_classifier to get predictions.
-            tag = #### YOUR CODE HERE ####
+            tag = self.tag_classifier.predict(features)[0]
             
             # Pass prepared_question to thread_ranker to get predictions.
-            thread_id = #### YOUR CODE HERE ####
+            thread_id = self.thread_ranker.get_best_thread(prepared_question,tag)
             
             return self.ANSWER_TEMPLATE % (tag, thread_id)

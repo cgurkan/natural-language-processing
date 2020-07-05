@@ -8,11 +8,11 @@ from nltk.corpus import stopwords
 
 # Paths for all resources for the bot.
 RESOURCE_PATH = {
-    'INTENT_RECOGNIZER': 'intent_recognizer.pkl',
-    'TAG_CLASSIFIER': 'tag_classifier.pkl',
-    'TFIDF_VECTORIZER': 'tfidf_vectorizer.pkl',
-    'THREAD_EMBEDDINGS_FOLDER': 'thread_embeddings_by_tags',
-    'WORD_EMBEDDINGS': 'data/word_embeddings.tsv',
+    'INTENT_RECOGNIZER': 'models/intent_recognizer.pkl',
+    'TAG_CLASSIFIER': 'models/tag_classifier.pkl',
+    'TFIDF_VECTORIZER': 'models/tfidf_vectorizer.pkl',
+    'THREAD_EMBEDDINGS_FOLDER': 'models/thread_embeddings_by_tags',
+    'WORD_EMBEDDINGS': 'data/word_embedding.tsv',
 }
 
 
@@ -43,15 +43,12 @@ def load_embeddings(embeddings_path):
     # Note that here you also need to know the dimension of the loaded embeddings.
     # When you load the embeddings, use numpy.float32 type as dtype
 
-    ########################
-    #### YOUR CODE HERE ####
-    ########################
-
-    # remove this when you're done
-    raise NotImplementedError(
-        "Open utils.py and fill with your code. In case of Google Colab, download"
-        "(https://github.com/hse-aml/natural-language-processing/blob/master/project/utils.py), "
-        "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+    starspace_embeddings = dict()
+    for line in open(embeddings_path, encoding='utf-8'):
+        row = line.strip().split('\t')
+        starspace_embeddings[row[0]] = np.array(row[1:], dtype=np.float32)
+        dim = len(row)-1
+    return starspace_embeddings, dim 
 
 
 def question_to_vec(question, embeddings, dim):
@@ -59,15 +56,11 @@ def question_to_vec(question, embeddings, dim):
 
     # Hint: you have already implemented exactly this function in the 3rd assignment.
 
-    ########################
-    #### YOUR CODE HERE ####
-    ########################
-
-    # remove this when you're done
-    raise NotImplementedError(
-        "Open utils.py and fill with your code. In case of Google Colab, download"
-        "(https://github.com/hse-aml/natural-language-processing/blob/master/project/utils.py), "
-        "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+    words_embedding = [embeddings[word] for word in question.split() if word in embeddings]
+    if not words_embedding:
+        return np.zeros(dim)
+    words_embedding = np.array(words_embedding)
+    return words_embedding.mean(axis=0)
 
 
 def unpickle_file(filename):
